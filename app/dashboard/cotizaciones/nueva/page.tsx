@@ -101,19 +101,27 @@ export default function NuevaCotizacionPage() {
     setError(null)
 
     try {
-      // Obtener número de cotización
-      const { data: numData, error: numError } = await supabase
-        .rpc('next_quote_number', { p_line: Number(businessLine) })
+      // Obtener y actualizar secuencia manualmente
+      const { data: seqData, error: seqError } = await supabase
+        .from('quote_sequences')
+        .select('last_number')
+        .eq('business_line', Number(businessLine))
+        .single()
 
-      console.log('RPC result:', numData, numError)
-
-      if (numError || !numData) {
-        setError('Error generando número: ' + (numError?.message ?? 'sin datos'))
+      if (seqError || !seqData) {
+        setError('Error obteniendo secuencia')
         setSaving(false)
         return
       }
 
-      const quoteNumber = numData as string
+      const nextNumber = seqData.last_number + 1
+
+      await supabase
+        .from('quote_sequences')
+        .update({ last_number: nextNumber })
+        .eq('business_line', Number(businessLine))
+
+      const quoteNumber = `${businessLine}-${String(nextNumber).padStart(4, '0')}`
 
       // Crear cotización
       const { data: quote, error: quoteError } = await supabase
@@ -199,7 +207,7 @@ export default function NuevaCotizacionPage() {
 
       <div className="space-y-6">
 
-        {/* ─── SECCIÓN 1: CLIENTE ─── */}
+        {/* SECCIÓN 1: CLIENTE */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-white font-medium mb-4">1. Información del cliente</h2>
           <div className="grid grid-cols-2 gap-4">
@@ -279,7 +287,7 @@ export default function NuevaCotizacionPage() {
           )}
         </section>
 
-        {/* ─── SECCIÓN 2: ÍTEMS ─── */}
+        {/* SECCIÓN 2: ÍTEMS */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-white font-medium mb-4">2. Itemizado</h2>
 
@@ -416,7 +424,7 @@ export default function NuevaCotizacionPage() {
           </div>
         </section>
 
-        {/* ─── SECCIÓN 3: ALCANCES ─── */}
+        {/* SECCIÓN 3: ALCANCES */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-white font-medium mb-4">3. Alcances</h2>
           <div className="grid grid-cols-2 gap-4">
