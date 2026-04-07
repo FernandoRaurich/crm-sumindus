@@ -1,5 +1,6 @@
 import { createClient } from '../lib/supabase/server'
 import { redirect } from 'next/navigation'
+import PipelineTable from '../components/PipelineTable'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -13,47 +14,57 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  const { data: quotes } = await supabase
+    .from('v_pipeline')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  // KPIs
+  const active = quotes?.filter(q => !['facturada','no_aprobada'].includes(q.status)) ?? []
+  const approved = quotes?.filter(q => q.status === 'aprobada') ?? []
+  const total = active.reduce((sum, q) => sum + (q.total_clp ?? 0), 0)
+  const closeRate = quotes?.length
+    ? Math.round((approved.length / quotes.length) * 100)
+    : 0
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold">CRM Comercial</h1>
-            <p className="text-gray-400 text-sm mt-1">
-              Bienvenido, {profile?.full_name ?? user.email}
-            </p>
-          </div>
-          <span className="bg-blue-600 text-xs px-3 py-1 rounded-full">
-            {profile?.role ?? 'comercial'}
-          </span>
-        </div>
+    <div className="p-8 max-w-7xl mx-auto">
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Cotizaciones activas', value: '0' },
-            { label: 'Pipeline total', value: '$0' },
-            { label: 'Aprobadas este mes', value: '0' },
-            { label: 'Tasa de cierre', value: '0%' },
-          ].map((kpi) => (
-            <div key={kpi.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <p className="text-gray-400 text-xs mb-1">{kpi.label}</p>
-              <p className="text-2xl font-semibold">{kpi.value}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium">Pipeline comercial</h2>
-            <button className="bg-blue-600 hover:bg-blue-500 text-sm px-4 py-2 rounded-lg transition-colors">
-              + Nueva cotización
-            </button>
-          </div>
-          <p className="text-gray-500 text-sm text-center py-12">
-            No hay cotizaciones aún. Crea la primera.
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Pipeline comercial</h1>
+          <p className="text-gray-400 text-sm mt-1">
+            Bienvenido, {profile?.full_name}
           </p>
         </div>
       </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-gray-400 text-xs mb-1">Cotizaciones activas</p>
+          <p className="text-2xl font-semibold text-white">{active.length}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-gray-400 text-xs mb-1">Pipeline total (neto)</p>
+          <p className="text-2xl font-semibold text-white">
+            ${Math.round(total / 1000000)}M
+          </p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-gray-400 text-xs mb-1">Aprobadas</p>
+          <p className="text-2xl font-semibold text-white">{approved.length}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-gray-400 text-xs mb-1">Tasa de cierre</p>
+          <p className="text-2xl font-semibold text-white">{closeRate}%</p>
+        </div>
+      </div>
+
+      {/* Tabla pipeline */}
+      <PipelineTable quotes={quotes ?? []} />
+
     </div>
   )
 }
