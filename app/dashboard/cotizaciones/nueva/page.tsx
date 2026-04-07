@@ -12,15 +12,6 @@ const BUSINESS_LINES = [
   { value: 4000, label: '4000 · Rental' },
 ]
 
-const STATUS_LABELS: Record<string, string> = {
-  pendiente: 'Pendiente',
-  enviada: 'Enviada',
-  aprobada: 'Aprobada',
-  facturada: 'Facturada',
-  por_facturar: 'Por facturar',
-  no_aprobada: 'No aprobada',
-}
-
 interface QuoteItem {
   id: string
   description: string
@@ -35,7 +26,6 @@ export default function NuevaCotizacionPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // Sección 1 — Cliente
   const [businessLine, setBusinessLine] = useState<BusinessLine>(1000)
   const [companySearch, setCompanySearch] = useState('')
   const [companies, setCompanies] = useState<any[]>([])
@@ -44,14 +34,12 @@ export default function NuevaCotizacionPage() {
   const [selectedContact, setSelectedContact] = useState<any>(null)
   const [shortName, setShortName] = useState('')
 
-  // Sección 2 — Ítems
   const [items, setItems] = useState<QuoteItem[]>([
     { id: '1', description: '', availability: '-', unit: '', quantity: 1, currency: 'CLP', unit_price: 0 },
   ])
   const [discountPct, setDiscountPct] = useState(0)
   const [notes, setNotes] = useState('')
 
-  // Sección 3 — Alcances
   const [paymentConditions, setPaymentConditions] = useState('')
   const [deliveryTime, setDeliveryTime] = useState('')
   const [warranty, setWarranty] = useState('')
@@ -61,7 +49,6 @@ export default function NuevaCotizacionPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Buscar empresas
   async function searchCompanies(q: string) {
     setCompanySearch(q)
     if (q.length < 2) { setCompanies([]); return }
@@ -73,7 +60,6 @@ export default function NuevaCotizacionPage() {
     setCompanies(data ?? [])
   }
 
-  // Seleccionar empresa
   async function selectCompany(company: any) {
     setSelectedCompany(company)
     setCompanySearch(company.name)
@@ -85,14 +71,12 @@ export default function NuevaCotizacionPage() {
     setContacts(data ?? [])
   }
 
-  // Calcular totales
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0)
   const discount = subtotal * (discountPct / 100)
   const base = subtotal - discount
   const iva = base * 0.19
   const total = base + iva
 
-  // Manejo de ítems
   function addItem() {
     setItems(prev => [...prev, {
       id: Date.now().toString(),
@@ -109,7 +93,6 @@ export default function NuevaCotizacionPage() {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i))
   }
 
-  // Guardar cotización
   async function handleSave() {
     if (!selectedCompany) { setError('Selecciona un cliente'); return }
     if (items.every(i => !i.description)) { setError('Agrega al menos un ítem'); return }
@@ -117,67 +100,90 @@ export default function NuevaCotizacionPage() {
     setSaving(true)
     setError(null)
 
-    // Obtener número de cotización
-    const { data: numData, error: numError } = await supabase
-      .rpc('next_quote_number', { p_line: businessLine })
+    try {
+      // Obtener número de cotización
+      const { data: numData, error: numError } = await supabase
+        .rpc('next_quote_number', { p_line: Number(businessLine) })
 
-    if (numError) { setError('Error generando número'); setSaving(false); return }
+      console.log('RPC result:', numData, numError)
 
-    const quoteNumber = numData
+      if (numError || !numData) {
+        setError('Error generando número: ' + (numError?.message ?? 'sin datos'))
+        setSaving(false)
+        return
+      }
 
-    // Crear cotización
-    const { data: quote, error: quoteError } = await supabase
-      .from('quotes')
-      .insert({
-        quote_number: quoteNumber,
-        short_name: shortName || null,
-        company_id: selectedCompany.id,
-        contact_id: selectedContact?.id ?? null,
-        business_line: businessLine,
-        has_uf_section: businessLine === 4000,
-        subtotal_clp: subtotal,
-        discount_pct: discountPct,
-        iva_clp: iva,
-        total_clp: total,
-        payment_conditions: paymentConditions || null,
-        delivery_time: deliveryTime || null,
-        warranty: warranty || null,
-        dispatch: dispatch || null,
-        contact_scope: contactScope || null,
-        notes: notes || null,
-        status: 'pendiente',
-      })
-      .select()
-      .single()
+      const quoteNumber = numData as string
 
-    if (quoteError) { setError('Error creando cotización: ' + quoteError.message); setSaving(false); return }
+      // Crear cotización
+      const { data: quote, error: quoteError } = await supabase
+        .from('quotes')
+        .insert({
+          quote_number: quoteNumber,
+          short_name: shortName || null,
+          company_id: selectedCompany.id,
+          contact_id: selectedContact?.id ?? null,
+          business_line: Number(businessLine),
+          has_uf_section: Number(businessLine) === 4000,
+          subtotal_clp: subtotal,
+          discount_pct: discountPct,
+          iva_clp: iva,
+          total_clp: total,
+          payment_conditions: paymentConditions || null,
+          delivery_time: deliveryTime || null,
+          warranty: warranty || null,
+          dispatch: dispatch || null,
+          contact_scope: contactScope || null,
+          notes: notes || null,
+          status: 'pendiente',
+        })
+        .select()
+        .single()
 
-    // Insertar ítems
-    const itemsToInsert = items
-      .filter(i => i.description)
-      .map((i, idx) => ({
-        quote_id: quote.id,
-        item_order: idx + 1,
-        description: i.description,
-        availability: i.availability,
-        unit: i.unit,
-        quantity: i.quantity,
-        currency: i.currency,
-        unit_price: i.unit_price,
-      }))
+      if (quoteError) {
+        setError('Error creando cotización: ' + quoteError.message)
+        setSaving(false)
+        return
+      }
 
-    if (itemsToInsert.length > 0) {
-      await supabase.from('quote_items').insert(itemsToInsert)
+      // Insertar ítems
+      const itemsToInsert = items
+        .filter(i => i.description)
+        .map((i, idx) => ({
+          quote_id: quote.id,
+          item_order: idx + 1,
+          description: i.description,
+          availability: i.availability,
+          unit: i.unit,
+          quantity: i.quantity,
+          currency: i.currency,
+          unit_price: i.unit_price,
+        }))
+
+      if (itemsToInsert.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('quote_items')
+          .insert(itemsToInsert)
+
+        if (itemsError) {
+          setError('Error guardando ítems: ' + itemsError.message)
+          setSaving(false)
+          return
+        }
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+
+    } catch (e: any) {
+      setError('Error inesperado: ' + e.message)
+      setSaving(false)
     }
-
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-white">Nueva cotización</h1>
@@ -196,10 +202,8 @@ export default function NuevaCotizacionPage() {
         {/* ─── SECCIÓN 1: CLIENTE ─── */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-white font-medium mb-4">1. Información del cliente</h2>
-
           <div className="grid grid-cols-2 gap-4">
 
-            {/* Línea de negocio */}
             <div>
               <label className="text-xs text-gray-400 mb-1.5 block">Línea de negocio</label>
               <select
@@ -213,7 +217,6 @@ export default function NuevaCotizacionPage() {
               </select>
             </div>
 
-            {/* Nombre corto */}
             <div>
               <label className="text-xs text-gray-400 mb-1.5 block">Nombre corto (opcional)</label>
               <input
@@ -225,7 +228,6 @@ export default function NuevaCotizacionPage() {
               />
             </div>
 
-            {/* Buscar empresa */}
             <div className="relative">
               <label className="text-xs text-gray-400 mb-1.5 block">Empresa cliente</label>
               <input
@@ -251,7 +253,6 @@ export default function NuevaCotizacionPage() {
               )}
             </div>
 
-            {/* Contacto */}
             <div>
               <label className="text-xs text-gray-400 mb-1.5 block">Contacto / Solicitante</label>
               <select
@@ -269,7 +270,6 @@ export default function NuevaCotizacionPage() {
 
           </div>
 
-          {/* Info empresa seleccionada */}
           {selectedCompany && (
             <div className="mt-4 p-3 bg-gray-800 rounded-lg text-sm text-gray-300">
               <span className="text-gray-500 mr-2">RUT:</span>{selectedCompany.rut ?? '—'}
@@ -283,7 +283,6 @@ export default function NuevaCotizacionPage() {
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-white font-medium mb-4">2. Itemizado</h2>
 
-          {/* Tabla */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -379,7 +378,6 @@ export default function NuevaCotizacionPage() {
             + Agregar ítem
           </button>
 
-          {/* Totales */}
           <div className="mt-6 flex justify-end">
             <div className="w-64 space-y-2 text-sm">
               <div className="flex justify-between text-gray-400">
@@ -406,7 +404,6 @@ export default function NuevaCotizacionPage() {
             </div>
           </div>
 
-          {/* Notas */}
           <div className="mt-4">
             <label className="text-xs text-gray-400 mb-1.5 block">Notas internas</label>
             <textarea
@@ -422,7 +419,6 @@ export default function NuevaCotizacionPage() {
         {/* ─── SECCIÓN 3: ALCANCES ─── */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-white font-medium mb-4">3. Alcances</h2>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-gray-400 mb-1.5 block">Condiciones comerciales</label>
@@ -464,7 +460,7 @@ export default function NuevaCotizacionPage() {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
               />
             </div>
-            {businessLine === 4000 && (
+            {Number(businessLine) === 4000 && (
               <div className="col-span-2">
                 <label className="text-xs text-gray-400 mb-1.5 block">Contacto</label>
                 <input
@@ -479,12 +475,10 @@ export default function NuevaCotizacionPage() {
           </div>
         </section>
 
-        {/* Error */}
         {error && (
           <p className="text-red-400 text-sm">{error}</p>
         )}
 
-        {/* Botones */}
         <div className="flex justify-end gap-3 pb-8">
           <button
             onClick={() => router.back()}
