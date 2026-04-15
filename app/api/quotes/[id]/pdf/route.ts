@@ -4,6 +4,9 @@ import React from 'react'
 import { createClient } from '../../../../lib/supabase/server'
 import { RentalQuotePdf } from '../../../../lib/pdf/rental-template'
 
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
