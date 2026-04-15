@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createClient } from '../../../lib/supabase/client'
 
 interface Props {
   quoteId: string
@@ -9,25 +10,58 @@ interface Props {
 
 export default function DownloadPdfButton({ quoteId, quoteNumber }: Props) {
   const [loading, setLoading] = useState(false)
+  const supabase = createClient()
 
   async function handleDownload() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/quotes/${quoteId}/pdf`)
-      if (!res.ok) {
-        const msg = await res.text()
-        alert('Error generando PDF: ' + msg)
+      // Traer datos desde el cliente
+      const [{ data: quote }, { data: items }, { data: faena }] = await Promise.all([
+        supabase
+          .from('quotes')
+          .select('*, company:companies(*), contact:contacts(*)')
+          .eq('id', quoteId)
+          .single(),
+        supabase
+          .from('quote_items')
+          .select('*')
+          .eq('quote_id', quoteId)
+          .order('item_order'),
+        supabase
+          .from('rental_faena')
+          .select('*')
+          .eq('quote_id', quoteId)
+          .maybeSingle(),
+      ])
+
+      if (!quote) {
+        alert('No se encontró la cotización')
         return
       }
-      const blob = await res.blob()
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement('a')
+
+      // Importar dinámicamente para que solo cargue en el browser
+      const [{ pdf }, { default: React }, { RentalQuotePdf }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('react'),
+        import('../../../lib/pdf/rental-template'),
+      ])
+
+      const blob = await pdf(
+        React.createElement(RentalQuotePdf, {
+          quote: quote as any,
+          items: items ?? [],
+          faena: faena ?? null,
+        })
+      ).toBlob()
+
+      const url = URL.createObjectURL(blob)
+      const a   = document.createElement('a')
       a.href     = url
       a.download = `cotizacion-${quoteNumber}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e) {
-      alert('Error inesperado al generar PDF')
+    } catch (e: any) {
+      alert('Error generando PDF: ' + (e?.message ?? e))
     } finally {
       setLoading(false)
     }
@@ -45,9 +79,7 @@ export default function DownloadPdfButton({ quoteId, quoteNumber }: Props) {
           Generando...
         </>
       ) : (
-        <>
-          ↓ Descargar PDF
-        </>
+        <>↓ Descargar PDF</>
       )}
     </button>
   )
