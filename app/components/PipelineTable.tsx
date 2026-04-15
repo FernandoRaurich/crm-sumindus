@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '../lib/supabase/client'
 import type { QuoteStatus, PipelineView } from '../lib/types'
 
@@ -118,7 +119,9 @@ export default function PipelineTable({ quotes }: { quotes: PipelineView[] }) {
               filtered.map(q => (
                 <tr key={q.id} className="hover:bg-gray-800 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="text-blue-400 font-medium">{q.quote_number}</div>
+                    <Link href={`/dashboard/cotizaciones/${q.id}`} className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                      {q.quote_number}
+                    </Link>
                     {q.short_name && (
                       <div className="text-gray-500 text-xs mt-0.5">{q.short_name}</div>
                     )}
