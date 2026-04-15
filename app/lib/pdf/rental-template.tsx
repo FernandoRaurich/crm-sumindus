@@ -356,7 +356,7 @@ function CondicionesPages() {
   return (
     <>
       {/* Página 2 */}
-      <Page size="Letter" style={s.condPage}>
+      <Page size="LETTER" style={s.condPage}>
         <Text style={s.ofertaTitle}>OFERTA DE ARRIENDO</Text>
         <Text style={s.disclaimer}>Esta cotización refleja oferta al momento de su emisión y puede variar en el tiempo.</Text>
 
@@ -402,7 +402,7 @@ function CondicionesPages() {
       </Page>
 
       {/* Página 3 */}
-      <Page size="Letter" style={s.condPage}>
+      <Page size="LETTER" style={s.condPage}>
         <Text style={s.ofertaTitle}>OFERTA DE ARRIENDO</Text>
         <Text style={s.disclaimer}>Esta cotización refleja oferta al momento de su emisión y puede variar en el tiempo.</Text>
 
@@ -424,7 +424,7 @@ function CondicionesPages() {
       </Page>
 
       {/* Página 4 */}
-      <Page size="Letter" style={s.condPage}>
+      <Page size="LETTER" style={s.condPage}>
         <Text style={s.ofertaTitle}>OFERTA DE ARRIENDO</Text>
         <Text style={s.disclaimer}>Esta cotización refleja oferta al momento de su emisión y puede variar en el tiempo.</Text>
 
@@ -462,7 +462,7 @@ function CondicionesPages() {
       </Page>
 
       {/* Página 5 */}
-      <Page size="Letter" style={s.condPage}>
+      <Page size="LETTER" style={s.condPage}>
         <Text style={s.ofertaTitle}>OFERTA DE ARRIENDO</Text>
         <Text style={s.disclaimer}>Esta cotización refleja oferta al momento de su emisión y puede variar en el tiempo.</Text>
 
@@ -503,7 +503,7 @@ export function RentalQuotePdf({ quote, items, faena }: RentalPdfProps) {
   return (
     <Document title={`Cotización ${quote.quote_number}`} author="SP RENTAL">
       {/* ── PÁGINA 1: Cotización ── */}
-      <Page size="Letter" style={s.page}>
+      <Page size="LETTER" style={s.page}>
 
         {/* Header */}
         <View style={s.headerRow}>
