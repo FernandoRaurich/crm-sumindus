@@ -134,6 +134,27 @@ export default function NuevaCotizacionPage() {
     setError(null)
   }
 
+  // Crear contacto para empresa ya existente
+  async function createContactForCompany() {
+    if (!newContactInline.full_name) { setError('El nombre del contacto es obligatorio'); return }
+    const { data: cont, error: contError } = await supabase
+      .from('contacts')
+      .insert({
+        company_id: selectedCompany.id,
+        full_name: newContactInline.full_name,
+        email: newContactInline.email || null,
+        phone: newContactInline.phone || null,
+      })
+      .select()
+      .single()
+    if (contError) { setError('Error creando contacto: ' + contError.message); return }
+    setContacts([cont])
+    setSelectedContact(cont)
+    setNewContactInline({ full_name: '', email: '', phone: '' })
+    setShowNewContact(false)
+    setError(null)
+  }
+
   // Cálculos
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0)
   const discountAmt = subtotal * (discountPct / 100)
@@ -472,7 +493,7 @@ export default function NuevaCotizacionPage() {
             </div>
           )}
 
-          {selectedCompany && contacts.length === 0 && !showNewClient && (
+          {selectedCompany && contacts.length === 0 && !showNewClient && !showNewContact && (
             <p className="text-gray-500 text-xs">
               Esta empresa no tiene contactos registrados.{' '}
               <button
@@ -483,15 +504,61 @@ export default function NuevaCotizacionPage() {
               </button>
             </p>
           )}
+
+          {selectedCompany && showNewContact && (
+            <div className="border border-blue-800 bg-blue-950/30 rounded-xl p-4 space-y-3">
+              <p className="text-blue-400 text-sm font-medium">Nuevo contacto</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className={labelClass}>Nombre completo *</label>
+                  <input
+                    type="text"
+                    value={newContactInline.full_name}
+                    onChange={(e) => setNewContactInline(p => ({ ...p, full_name: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input
+                    type="email"
+                    value={newContactInline.email}
+                    onChange={(e) => setNewContactInline(p => ({ ...p, email: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Teléfono</label>
+                  <input
+                    type="text"
+                    value={newContactInline.phone}
+                    onChange={(e) => setNewContactInline(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="+56 9 1234 5678"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={createContactForCompany}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors"
+                >
+                  Guardar contacto
+                </button>
+                <button
+                  onClick={() => { setShowNewContact(false); setNewContactInline({ full_name: '', email: '', phone: '' }) }}
+                  className="px-4 py-2 text-gray-400 hover:text-white text-sm transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ── SECCIÓN 2: ÍTEMS ── */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h2 className="text-white font-medium mb-1">2. Itemizado</h2>
-          <p className="text-gray-500 text-xs mb-4">
-            <span className="font-medium text-gray-400">Disponibilidad:</span> estado del ítem (Inmediata, En stock, Por confirmar, etc.) ·{' '}
-            <span className="font-medium text-gray-400">UM:</span> unidad de medida (m, kg, c/u, Hrs, Global, Días, etc.)
-          </p>
+          <h2 className="text-white font-medium mb-4">2. Itemizado</h2>
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
