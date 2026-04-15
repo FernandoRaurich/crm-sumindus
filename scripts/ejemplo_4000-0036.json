@@ -1,0 +1,66 @@
+{
+  "quote": {
+    "id": "ejemplo",
+    "quote_number": "4000-0036",
+    "business_line": 4000,
+    "quote_date": "2026-04-02",
+    "has_uf_section": true,
+    "subtotal_uf": 75.60,
+    "discount_pct_uf": 0,
+    "iva_uf": 14.36,
+    "total_uf": 89.96,
+    "subtotal_clp": 864000,
+    "discount_pct": 0,
+    "iva_clp": 164160,
+    "total_clp": 1028160,
+    "notes": "- COTIZACIÓN ELABORADA PARA UN MES. SE CONSIDERAN MÍNIMO 180 HORAS MÍNIMAS MENSUALES (MÍNIMO 8 HORAS DIARIAS).\n- EN LOS VALORES ESTÁ CONSIDERADO EL ALZA RECIENTE DE PRECIOS DEL COMBUSTIBLE.",
+    "payment_conditions": "CRÉDITO A 30 DÍAS CONTRA FACTURA",
+    "delivery_time": "",
+    "warranty": "SI",
+    "dispatch": "SI",
+    "contact_scope": "LUCAS LOBOS / SERGIO ASPE",
+    "company": {
+      "name": "ICAFAL INGENIERIA Y CONSTRUCCION SA",
+      "rut": "88.481.800-1",
+      "address": "AV. SANTA CLARA CON AV. DEL CONDOR CIUDAD"
+    },
+    "contact": {
+      "full_name": "Ignacio Acevedo",
+      "email": "IACEVEDOF@ICAFAL.CL",
+      "phone": "+56 9 7218 0513"
+    }
+  },
+  "items": [
+    {
+      "item_order": 1,
+      "description": "ARRIENDO MINICARGADOR FRONTAL CAT 246D3",
+      "availability": "INMEDIATA",
+      "unit": "Horas",
+      "quantity": 180,
+      "currency": "UF",
+      "unit_price": 0.42,
+      "total_price": 75.60
+    },
+    {
+      "item_order": 2,
+      "description": "TRASLADO MINICARGADOR FRONTAL CAT 246D3",
+      "availability": "-",
+      "unit": "horas",
+      "quantity": 1,
+      "currency": "CLP",
+      "unit_price": 864000,
+      "total_price": 864000
+    }
+  ],
+  "faena": {
+    "lugar_faena": "",
+    "uso_especifico": "",
+    "plazo_ejecucion": "",
+    "estandar_minero": "",
+    "equipamiento_add": "",
+    "responsable_mant": "",
+    "realiza_en_faena": "No aplica",
+    "kit_repuestos": "No aplica",
+    "plazo_retiro": ""
+  }
+}

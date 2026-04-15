@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python rental_quote_excel.py ejemplo_4000-0036.json -o cotizacion-4000-0036.xlsx)",
+      "Bash(start \"c:/Users/Fernando Raurich/Documents/crm-sumindus/scripts/cotizacion-4000-0036.xlsx\")"
+    ]
+  }
+}
