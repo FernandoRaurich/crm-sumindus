@@ -153,7 +153,7 @@ export default function PipelineTable({ quotes }: { quotes: PipelineView[] }) {
                     </select>
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-xs">
-                    {new Date(q.quote_date).toLocaleDateString('es-CL')}
+                    {q.quote_date?.slice(0, 10).split('-').reverse().join('/')}
                   </td>
                 </tr>
               ))
