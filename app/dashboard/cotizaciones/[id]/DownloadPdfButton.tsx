@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import React from 'react'
+import { pdf } from '@react-pdf/renderer'
 import { createClient } from '../../../lib/supabase/client'
+import { RentalQuotePdf } from '../../../lib/pdf/rental-template'
 
 interface Props {
   quoteId: string
@@ -15,7 +18,6 @@ export default function DownloadPdfButton({ quoteId, quoteNumber }: Props) {
   async function handleDownload() {
     setLoading(true)
     try {
-      // Traer datos desde el cliente
       const [{ data: quote }, { data: items }, { data: faena }] = await Promise.all([
         supabase
           .from('quotes')
@@ -38,13 +40,6 @@ export default function DownloadPdfButton({ quoteId, quoteNumber }: Props) {
         alert('No se encontró la cotización')
         return
       }
-
-      // Importar dinámicamente para que solo cargue en el browser
-      const [{ pdf }, { default: React }, { RentalQuotePdf }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('react'),
-        import('../../../lib/pdf/rental-template'),
-      ])
 
       const blob = await pdf(
         React.createElement(RentalQuotePdf, {
