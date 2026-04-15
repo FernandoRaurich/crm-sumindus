@@ -51,7 +51,7 @@ export default function DownloadPdfButton({ quoteId, quoteNumber }: Props) {
           quote: quote as any,
           items: items ?? [],
           faena: faena ?? null,
-        })
+        }) as any
       ).toBlob()
 
       const url = URL.createObjectURL(blob)
